@@ -1,3 +1,4 @@
+
 name: Frontend CI/CD (Development)
 
 on:
@@ -20,7 +21,6 @@ jobs:
       name: Development
 
     steps:
-
       ############################################################
       # CHECKOUT
       ############################################################
@@ -29,7 +29,6 @@ jobs:
         uses: actions/checkout@v4
 
       ############################################################
-            ############################################################
       # CHECK GITHUB OIDC CLAIMS
       ############################################################
 
@@ -48,8 +47,6 @@ jobs:
             core.info(`Ref: ${payload.ref}`);
             core.info(`Environment: ${payload.environment || 'not set'}`);
 
-      ############################################################
-      # CONFIGURE AWS CREDENTIALS
       ############################################################
       # CONFIGURE AWS CREDENTIALS
       ############################################################
@@ -85,15 +82,19 @@ jobs:
 
       - name: Read Terraform Outputs
         run: |
-          echo "S3_BUCKET_NAME=$(jq -r '.outputs.bucket_name.value' terraform.tfstate)" >> $GITHUB_ENV
-          echo "CLOUDFRONT_DISTRIBUTION_ID=$(jq -r '.outputs.cloudfront_distribution_id.value' terraform.tfstate)" >> $GITHUB_ENV
-          echo "FRONTEND_URL=$(jq -r '.outputs.frontend_url.value' terraform.tfstate)" >> $GITHUB_ENV
+          echo "S3_BUCKET_NAME=$(jq -r '.outputs.bucket_name.value' terraform.tfstate)" >> "$GITHUB_ENV"
+          echo "CLOUDFRONT_DISTRIBUTION_ID=$(jq -r '.outputs.cloudfront_distribution_id.value' terraform.tfstate)" >> "$GITHUB_ENV"
+          echo "FRONTEND_URL=$(jq -r '.outputs.frontend_url.value' terraform.tfstate)" >> "$GITHUB_ENV"
+
+      ############################################################
+      # DISPLAY INFRASTRUCTURE OUTPUTS
+      ############################################################
 
       - name: Display Infrastructure Outputs
         run: |
-          echo "Bucket Name              : $S3_BUCKET_NAME"
-          echo "CloudFront Distribution  : $CLOUDFRONT_DISTRIBUTION_ID"
-          echo "Frontend URL             : $FRONTEND_URL"
+          echo "Bucket Name             : $S3_BUCKET_NAME"
+          echo "CloudFront Distribution : $CLOUDFRONT_DISTRIBUTION_ID"
+          echo "Frontend URL            : $FRONTEND_URL"
 
       ############################################################
       # DEPLOY TO S3
@@ -101,7 +102,7 @@ jobs:
 
       - name: Upload Frontend to Amazon S3
         run: |
-          aws s3 sync frontend/ s3://$S3_BUCKET_NAME --delete
+          aws s3 sync frontend/ "s3://$S3_BUCKET_NAME" --delete
 
       ############################################################
       # INVALIDATE CLOUDFRONT
@@ -110,5 +111,6 @@ jobs:
       - name: Invalidate CloudFront Cache
         run: |
           aws cloudfront create-invalidation \
-            --distribution-id $CLOUDFRONT_DISTRIBUTION_ID \
+            --distribution-id "$CLOUDFRONT_DISTRIBUTION_ID" \
             --paths "/*"
+
